@@ -2,19 +2,26 @@ import { useEffect, useState, React } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import axios from 'axios';
-import { FilterMatchMode, FilterOperator } from 'primereact/api';
-import { InputText } from 'primereact/inputtext';
+import { FilterMatchMode } from 'primereact/api';
 import { Dropdown } from 'primereact/dropdown';
 import { MultiSelect } from 'primereact/multiselect';
+import { Dialog } from 'primereact/dialog';
+
+//CSS
+import "primeflex/primeflex.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";  //theme
 import "primereact/resources/primereact.min.css";                  //core css
 import "primeicons/primeicons.css";                                //icons
+import './App.css';
+
 
 function App() {
   const [data, setData] = useState([]);
   const [error, setError] = useState({ type: false, message: "" });
-  const [globalFilterValue2, setGlobalFilterValue2] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [position, setPosition] = useState('center');
+  const [displayPosition, setDisplayPosition] = useState(false);
+  
   const [filters2, setFilters2] = useState({
         'global': { value: null, matchMode: FilterMatchMode.CONTAINS },
         'title': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
@@ -24,43 +31,63 @@ function App() {
         'certification': { value: null, matchMode: FilterMatchMode.EQUALS },
         'rating': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
   });
-  const directorsName =  [...new Set(data.map(item => item.director))];
+
+  //director name for drop down
+  const directorsName = [...new Set(data.map(item => item.director))];
+  //certification name for drop down
   const certifications = [...new Set(data.map(item => item.certification))];
+  
   const getMovieData = async () => {
     try {
       const { data } = await axios.get('https://skyit-coding-challenge.herokuapp.com/movies');
-      data.map(el => el.rating= ((el.rating/5)* 100).toFixed(2) + "%")
+      data.map(el => el.rating = ((el.rating / 5) * 100).toFixed(2) + "%")
       setData(data)
     } catch (err) {
-      setError({type: true, message: err.message})
+      setError({ type: true, message: err.message })
     }
-  }
+  };
+
   useEffect(() => {
-    
     getMovieData();
   }, []);
-
-
   
- //refactor
-  const representativeBodyTemplate = (rowData) => {
+  //detail view 
+  const dialogFuncMap = {'displayPosition': setDisplayPosition};
+
+  const onClick = (name, position) => {
+    dialogFuncMap[`${name}`](true);
+    if (position) {setPosition(position);}
+  };
+
+  const onHide = (name) => {
+    dialogFuncMap[`${name}`](false);
+    setSelectedProduct(null)
+  };
+
+
+  const directorBodyTemplate = (rowData) => {
     const directorsName = rowData.director;
     return <span className="image-text">{directorsName}</span>
   };
 
-  const representativesItemTemplate = (option) => {
+  const directorsItemTemplate = (option) => {
     return (
-      <div className="p-multiselect-representative-option">
+      <div className="p-multiselect-director-option">
         <span className="image-text">{option}</span>
       </div>
     );
   };
 
-  const representativeRowFilterTemplate = (options) => {
-    console.log(directorsName.director)
-        return <MultiSelect value={options.value} options={directorsName} itemTemplate={representativesItemTemplate}  onChange={(e) => options.filterApplyCallback(e.value)} placeholder="ALL" className="p-column-filter" maxSelectedLabels={1} />;
-    }
+  const directorRowFilterTemplate = (options) => {
+    return <MultiSelect value={options.value}
+      options={directorsName}
+      itemTemplate={directorsItemTemplate}
+      onChange={(e) => options.filterApplyCallback(e.value)}
+      placeholder="ALL" className="p-column-filter" maxSelectedLabels={1} />;
+  };
 
+  //certification
+  //certification dropdown body
   const statusBodyTemplate = (rowData) => {
     return <span className={`customer-badge status-${rowData.certification}`}>{rowData.certification}</span>;
   };
@@ -69,6 +96,7 @@ function App() {
     return <span className={`customer-badge status-${option}`}>{option}</span>;
   };
 
+  //certification frop down
   const statusRowFilterTemplate = (options) => {
     return (
       <Dropdown
@@ -82,38 +110,85 @@ function App() {
       />
     );
   };
-  
-  
+
   return (
-    <div>
+    <div className='App' >
+      <h1>Favorite Movie List</h1>
+      {selectedProduct?.plot && (
+        <Dialog className='dialog'
+          header="Movie Details"
+          visible={displayPosition}
+          position={position} modal
+          style={{ width: '40vw' }}
+          footer="All movie data is from wikipedia and IMDb"
+          onHide={() => onHide('displayPosition')}
+          draggable={false} resizable={false}>
+            <div className='detailView'>
+              <h1>{selectedProduct.title}</h1>
+              <h4>Directed by {selectedProduct.director}</h4>
+              <h3>Cast:{ selectedProduct.cast.map((actor, index) => <span key={index}>{actor}</span>)}</h3>
+              <h3>Genre:{selectedProduct.genre.map((genre, index) => <span key={index}>{genre}</span>)}</h3>
+              < div><h3>Plot:</h3> <p>{ selectedProduct.plot}</p></div>
+            </div>
+      </Dialog>)}
+      
       <DataTable
         value={data}
+        selection={selectedProduct}
+        onSelectionChange={e => setSelectedProduct(e.value)}
+        className="dataTable"
         responsiveLayout="scroll"
-        className="p-datatable-customers"
-        dataKey="id"
+        dataKey="_id"
         filters={filters2}
         filterDisplay="row"
         globalFilterFields={['title', 'releaseDate', 'director', 'certification', 'rating']}
         emptyMessage="No customers found."
-
+        onClick={() => onClick('displayPosition', 'right')}
+        paginator
+        rows={10}
       >
-        <Column selectionMode="single" ></Column>
+        <Column selectionMode="single" headerStyle={{width: '3em'}}></Column>
         <Column field="title" header="Title" filter showFilterMenu={false}
-            filterPlaceholder="Search by title" style={{ minWidth: '12rem' }}></Column>
-        <Column field="releaseDate" header="Year" filterField="releaseDate" style={{ minWidth: '12rem' }} filter showFilterMenu={false} filterPlaceholder="Search by release year"></Column>
-        <Column field="length" header="RunningTime" filterField="length" showFilterMenu={false} style={{ minWidth: '12rem' }} filter filterPlaceholder="Search by movie length"></Column>
-        <Column header="director"
+            filterPlaceholder="Search by title" style={{  width: '20rem' }}></Column>
+        <Column field="releaseDate"
+          header="Year"
+          filterField="releaseDate"
+          style={{ width: '20rem' }}
+          filter showFilterMenu={false}
+          filterPlaceholder="Search by release year">
+          </Column>
+        <Column field="length"
+          header="RunningTime"
+          filterField="length"
+          showFilterMenu={false}
+          style={{ width: '20rem' }}
+          filter filterPlaceholder="Search by time">
+          </Column>
+        <Column header="Director"
             field="director"
             filterField="director"
             showFilterMenu={false}
-            filterMenuStyle={{ width: "14rem" }}
-            style={{ minWidth: "14rem" }}
-            body={representativeBodyTemplate}
+            style={{ width: "20rem" }}
+            body={directorBodyTemplate}
             filter
-            filterElement={representativeRowFilterTemplate}>
+            filterElement={directorRowFilterTemplate}>
         </Column>
-        <Column field='certification' header="Certification" filterField='certification' showFilterMenu={false} filterMenuStyle={{ width: '14rem' }} style={{ minWidth: '12rem' }} body={statusBodyTemplate} filter filterElement={statusRowFilterTemplate}></Column>
-        <Column field='rating' header="Rating" filterField="rating" showFilterMenu={false} style={{ minWidth: '12rem' }} filter filterPlaceholder="Search by movie length"></Column>
+        <Column field='certification'
+          header="Certification"
+          filterField='certification'
+          showFilterMenu={false} style={{ width: '20rem' }}
+          body={statusBodyTemplate}
+          filter
+          filterElement={statusRowFilterTemplate}>
+          </Column>
+        <Column field='rating'
+          header="Rating"
+          filterField="rating"
+          showFilterMenu={false}
+          style={{ width: '20rem' }}
+          filter
+          filterPlaceholder="Search by rating">
+          </Column>
       </DataTable>
 
     </div>

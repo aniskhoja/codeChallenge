@@ -1,10 +1,59 @@
+body {
+  background-color: #e6e6e9;
+}
 .App {
   text-align: center;
 }
+.App h1 {
+  margin: 20px 0;
+}
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.dialog {
+  color: #636366;
+  font-size: 18px;
+}
+
+.detailView h1 h2 h3 h4 span p {
+  margin: 0;
+  padding: 0;
+}
+.detailView {
+  padding: 0.6em;
+  background-color: #88a2aa;
+  font-family: "Libre Baskerville", serif;
+  font-family: "Lora", serif;
+  font-weight: 500;
+}
+
+.detailView h1 {
+  text-align: center;
+  font-weight: 200;
+  margin: 0.3rem 0;
+}
+h4 {
+  text-align: center;
+  font-size: large;
+  margin-bottom: 10px;
+}
+h3 {
+  font-weight: 200;
+  margin: 5px 0;
+  font-size: 25px;
+}
+p {
+  font-size: 18px;
+}
+
+.detailView span {
+  border-radius: 30px;
+  padding: 0.25em 0.7rem;
+  font-weight: 400;
+  font-size: 16px;
+  background-color: #fff;
+  color: #256029;
+  margin: 0.3rem;
+  white-space: nowrap;
+  display: inline-flex;
 }
 
 @media (prefers-reduced-motion: no-preference) {

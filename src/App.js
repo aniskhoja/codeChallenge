@@ -24,8 +24,8 @@ function App() {
         'certification': { value: null, matchMode: FilterMatchMode.EQUALS },
         'rating': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
   });
-  const directorsName =  [...new Map(data.map(item => [item['director'], item])).values()];
-  
+  const directorsName =  [...new Set(data.map(item => item.director))];
+  const certifications = [...new Set(data.map(item => item.certification))];
   const getMovieData = async () => {
     try {
       const { data } = await axios.get('https://skyit-coding-challenge.herokuapp.com/movies');
@@ -40,28 +40,7 @@ function App() {
     getMovieData();
   }, []);
 
-const renderHeader2 = () => {
-    return (
-      <div className="flex justify-content-end">
-        <span className="p-input-icon-left">
-          <i className="pi pi-search" />
-          <InputText
-            value={globalFilterValue2}
-            onChange={onGlobalFilterChange2}
-            placeholder="Keyword Search"
-          />
-        </span>
-      </div>
-    );
-};
-  const onGlobalFilterChange2 = (e) => {
-    const value = e.target.value;
-    let _filters2 = { ...filters2 };
-    _filters2["global"].value = value;
 
-    setFilters2(_filters2);
-    setGlobalFilterValue2(value);
-  };
   
  //refactor
   const representativeBodyTemplate = (rowData) => {
@@ -72,26 +51,37 @@ const renderHeader2 = () => {
   const representativesItemTemplate = (option) => {
     return (
       <div className="p-multiselect-representative-option">
-        <span className="image-text">{option.director}</span>
+        <span className="image-text">{option}</span>
       </div>
     );
   };
 
   const representativeRowFilterTemplate = (options) => {
-        return <MultiSelect value={options.value} options={directorsName} itemTemplate={representativesItemTemplate}  onChange={(e) => options.filterApplyCallback(e.value)} optionLabel="director" placeholder="ALL" className="p-column-filter" maxSelectedLabels={1} />;
+    console.log(directorsName.director)
+        return <MultiSelect value={options.value} options={directorsName} itemTemplate={representativesItemTemplate}  onChange={(e) => options.filterApplyCallback(e.value)} placeholder="ALL" className="p-column-filter" maxSelectedLabels={1} />;
     }
 
   const statusBodyTemplate = (rowData) => {
-    return <span className={`customer-badge status-${rowData.status}`}>{rowData.certification}</span>;
+    return <span className={`customer-badge status-${rowData.certification}`}>{rowData.certification}</span>;
   };
 
   const statusItemTemplate = (option) => {
     return <span className={`customer-badge status-${option}`}>{option}</span>;
   };
 
- const statusRowFilterTemplate = (options) => {
-        return <Dropdown value={options.value} options={data.certification} onChange={(e) => options.filterApplyCallback(e.value)} placeholder="Select a Status" className="p-column-filter" showClear />;
-    }
+  const statusRowFilterTemplate = (options) => {
+    return (
+      <Dropdown
+        value={options.value}
+        options={certifications}
+        onChange={(e) => options.filterApplyCallback(e.value)}
+        itemTemplate={statusItemTemplate}
+        placeholder="Select a Status"
+        className="p-column-filter"
+        showClear
+      />
+    );
+  };
   
   
   return (
